@@ -1,1 +1,2 @@
-# rust-http-server
+# HTTP server in rust
+
