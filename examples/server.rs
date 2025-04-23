@@ -11,11 +11,11 @@ fn index_handler(_req: Request) -> Response {
 fn main() {
     let mut router = Router::new();
 
-    // router.get("/", hello_handler);
-    router.get("/", index_handler);
+    router.get("/", hello_handler);
+    router.get("/index", index_handler);
 
     Server::new(String::from("127.0.0.1:8000"))
         .with_router(router)
         .run()
-        .expect("Failed to run server");
+        .expect("[!] Failed to run server");
 }
