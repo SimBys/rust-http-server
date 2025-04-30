@@ -1,5 +1,8 @@
 # HTTP server in Rust
 
+> ### To run the server do:
+> `cargo run --example server`
+
 ## authors
 - Šimon Bystrický
 - Adam Pečenka
