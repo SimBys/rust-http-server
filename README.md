@@ -1,7 +1,21 @@
 # HTTP server in Rust
 
-> ### To run the server do:
+## Generating TLS Certificates for Development
+
+To run the server locally with HTTPS, you need `cert.pem` and `key.pem`. These are **self-signed** and should be used only for local development.
+
+1. Download and install [OpenSSL for Windows](https://slproweb.com/products/Win32OpenSSL.html) (if not already installed).
+2. Open your shell of choice and run following command:
+    > openssl req -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost/O=DevOrg"
+3. Make sure that these files are located in ```rust-http-server/certs``` directory    
+
+### To run the server do:
 > `cargo run --example server`
+
+
+
+
+<hr>
 
 ## authors
 - Šimon Bystrický

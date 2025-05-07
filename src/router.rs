@@ -1,8 +1,11 @@
 use std::collections::HashMap;
+use std::sync::Arc;
+
 use crate::{Request, Response, Handler};
 
+#[derive(Clone)]
 pub struct Router {
-    routes: HashMap<String, Box<dyn Handler>>,
+    routes: HashMap<String, Arc<dyn Handler>>,
 }
 
 impl Router {
@@ -14,7 +17,7 @@ impl Router {
     where
         F: Handler + 'static,
     {
-        self.routes.insert(path.to_string(), Box::new(handler));
+        self.routes.insert(path.to_string(), Arc::new(handler));
     }
 
     pub fn handle_request(&self, req: Request) -> Response {
