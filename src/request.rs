@@ -1,4 +1,5 @@
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Request {
     pub method: String,
     pub path: String,
@@ -39,5 +40,30 @@ impl Request {
             version,
             headers,
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut request = format!("{} {} {}\r\n", self.method, self.path, self.version);
+
+        for (key, value) in &self.headers {
+            request.push_str(&format!("{}: {}\r\n", key, value));
+        }
+
+        request.push_str("\r\n");
+        request
+    }
+
+    pub fn get(path: &str) -> Self {
+        Self {
+            method: String::from("GET"),
+            path: String::from(path),
+            version: String::from("HTTP/1.1"),
+            headers: vec![],
+        }
+    }
+
+    pub fn with_header(mut self, key: &str, value: &str) -> Self {
+        self.headers.push((key.to_string(), value.to_string()));
+        self
     }
 }

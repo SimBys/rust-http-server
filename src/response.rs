@@ -26,6 +26,40 @@ impl Response {
         }
     }
 
+    pub fn from_raw(raw: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut lines = raw.lines();
+
+        let status_line = lines.next().ok_or("[!] Missing status line")?;
+        let mut parts = status_line.split_whitespace();
+        parts.next(); // Skip HTTP version
+        let status_code = parts
+            .next()
+            .ok_or("Missing status code")?
+            .parse::<u16>()?;
+
+        // Skip headers
+        let mut body_started = false;
+        let mut body = String::new();
+
+        for line in lines {
+            if body_started {
+                body.push_str(line);
+                body.push('\n');
+            } else if line.trim().is_empty() {
+                body_started = true;
+            }
+        }
+
+        if body.ends_with('\n') {
+            body.pop(); // Remove last newline
+        }
+
+        Ok(Self {
+            status_code,
+            body,
+        })
+    }
+
     pub fn text(body: impl Into<String>) -> Self {
         Self::new(200, body)
     }
