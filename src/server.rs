@@ -7,6 +7,8 @@ use std::sync::Arc;
 use tokio::fs::create_dir_all;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
+use tokio::sync::Notify;
+use tokio::signal;
 use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::TlsAcceptor;
 
@@ -70,6 +72,16 @@ impl Server {
         let listener = TcpListener::bind(&self.address).await?;
         let logger = self.logger.unwrap();
 
+        let shutdown_notify = Arc::new(Notify::new());
+        let shutdown_trigger = shutdown_notify.clone();
+
+        // We shall waste a thread on this :3
+        tokio::spawn(async move {
+            signal::ctrl_c().await.unwrap();
+            println!("[S] Shutdown signal received. Gracefully shutting down...");
+            shutdown_trigger.notify_one();
+        });
+
         match self.tls_config {
             Some(ref _tls_config) => {
                 println!("[S] https://{}", self.address);
@@ -80,24 +92,33 @@ impl Server {
         }
 
         loop {
-            let (stream, client_addr) = listener.accept().await?;
-            let router = self.router.clone();
-            let logger = logger.clone();
+            tokio::select! {
+                Ok((stream, client_addr)) = listener.accept() => {
+                    let router = self.router.clone();
+                    let logger = logger.clone();
 
-            if let Some(tls_config) = self.tls_config.clone() {
-                let acceptor = TlsAcceptor::from(tls_config);
+                    if let Some(tls_config) = self.tls_config.clone() {
+                        let acceptor = TlsAcceptor::from(tls_config);
 
-                tokio::spawn(async move {
-                    let tls_stream = acceptor.accept(stream).await.unwrap();
-                    handle_connection(tls_stream, router, client_addr, Some(logger)).await;
-                });
-            } else {
-                tokio::spawn(async move {
-                    handle_connection(stream, router, client_addr, Some(logger)).await;
-                });
-            }
-        }
-    }
+                        tokio::spawn(async move {
+                            let tls_stream = acceptor.accept(stream).await.unwrap();
+                            handle_connection(tls_stream, router, client_addr, Some(logger)).await;
+                        });
+                    } else {
+                        tokio::spawn(async move {
+                            handle_connection(stream, router, client_addr, Some(logger)).await;
+                        });
+                    }
+                }
+                 _ = shutdown_notify.notified() => {
+                    break;
+                }
+            } // tokio::select!
+        } // loop
+
+        println!("[S] Server has shut down gracefully.");
+        Ok(())
+    } // run()
 }
 
 async fn handle_connection<T: AsyncReadExt + AsyncWriteExt + Unpin>(

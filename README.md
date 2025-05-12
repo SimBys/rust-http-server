@@ -3,6 +3,10 @@
 ### To run the server do:
 > `cargo run --example server`
 
+### To shutdown the server:
+> - Press <u>Ctrl+C</u> in the terminal thats runnig the server
+> - The server will shut down gracefully, no panicking threads
+
 <hr>
 
 ## authors
