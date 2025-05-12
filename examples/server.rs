@@ -17,7 +17,7 @@ async fn main() {
 
     let server = Server::new("127.0.0.1:8000".to_string())
         .with_router(router)
-        .with_tls("certs/cert.pem", "certs/key.pem")
+        .with_tls("certs/cert.crt", "certs/key.pem")
         .expect("[!] Can't create server")
         .with_logging();
 
