@@ -123,48 +123,60 @@ async fn test_1k_clients_concurrently() {
     }
 }
 
-// #[tokio::test]
-// async fn test_tls_connection() -> Result<(), Box<dyn Error>> {
-//     const ADDR: &str = "127.0.0.1:9004";
-//     const DOMAIN: &str = "localhost";
-//     const CERT_PATH: &str = "certs/cert.pem";
-//     const KEY_PATH: &str = "certs/key.pem";
-//
-//     let mut router = Router::new();
-//     router.get("/", |_| {
-//         Response::new(200)
-//             .with_body("<h1>Hi</h1>")
-//             .with_header("Content-Type", "text/html")
-//     });
-//
-//     tokio::spawn(async move {
-//         let server = Server::new(ADDR.to_string())
-//             .with_router(router)
-//             .with_tls(CERT_PATH, KEY_PATH)
-//             .expect("[!] Failed to create TLS server");
-//
-//         server.run().await.expect("[!] TLS server failed");
-//     });
-//
-//     tokio::time::sleep(Duration::from_millis(300)).await;
-//
-//     let client = TestClient::new(CERT_PATH, DOMAIN)?;
-//
-//     let stream = TokioTcpStream::connect(ADDR).await?;
-//     let mut stream = client.connect(stream).await?;
-//
-//     let request = Request::get("/")
-//         .with_header("Host", DOMAIN)
-//         .to_string();
-//     stream.write_all(request.as_bytes()).await?;
-//
-//     let mut buf = [0; 4096];
-//     let len = stream.read(&mut buf).await?;
-//     let raw = String::from_utf8_lossy(&buf[..len]);
-//     let response = Response::from_raw(&raw)?;
-//
-//     assert_eq!(response.status_code, 200);
-//     assert!(response.body.contains("<h1>Hi</h1>"));
-//
-//     Ok(())
-// }
+#[tokio::test]
+async fn test_tls_connection() -> Result<(), Box<dyn Error>> {
+    const ADDR: &str = "127.0.0.1:9003";
+    const DOMAIN: &str = "localhost";
+    const CERT_PATH: &str = "certs/cert.crt";
+    const KEY_PATH: &str = "certs/key.pem";
+
+    let mut router = Router::new();
+    router.get("/", |_| {
+        Response::new(200)
+            .with_body("<h1>Hi</h1>")
+            .with_header("Content-Type", "text/html")
+    });
+
+    tokio::spawn(async move {
+        let server = Server::new(ADDR.to_string())
+            .with_router(router)
+            .with_tls(CERT_PATH, KEY_PATH)
+            .expect("[!] Failed to create TLS server");
+
+        server.run().await.expect("[!] TLS server failed");
+    });
+
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    let client = TestClient::new(CERT_PATH, DOMAIN)?;
+
+    let stream = TokioTcpStream::connect(ADDR).await?;
+    let mut stream = client.connect(stream).await?;
+
+    let request = Request::get("/")
+        .with_header("Host", DOMAIN)
+        .to_string();
+    stream.write_all(request.as_bytes()).await?;
+
+    let mut buf = [0; 4096];
+    let len = stream.read(&mut buf).await?;
+    let raw = String::from_utf8_lossy(&buf[..len]);
+
+    let (status_line, headers_and_body) = raw.split_at(raw.find("\r\n").unwrap());
+    let status_code = status_line.split_whitespace().nth(1).unwrap_or("500");
+
+    let (headers, body) = headers_and_body.split_at(headers_and_body.find("\r\n\r\n").unwrap() + 4);
+    let headers = headers.trim();
+
+    let body = body.trim();
+
+    let response = Response::new(status_code.parse::<u16>()
+        .unwrap_or(500))
+        .parse_headers(headers)
+        .with_body(body);
+
+    assert_eq!(response.status_code, 200);
+    assert!(response.body.contains("<h1>Hi</h1>"));
+
+    Ok(())
+}

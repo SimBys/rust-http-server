@@ -41,6 +41,21 @@ impl Response {
         }
     }
 
+    pub fn parse_headers(mut self, headers_str: &str) -> Self {
+        self.headers = headers_str
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(|line| {
+                let mut parts = line.splitn(2, ": ");
+                (
+                    parts.next().unwrap_or_default().to_string(),
+                    parts.next().unwrap_or_default().to_string(),
+                )
+            })
+            .collect();
+        self
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let headers = self.prepare_headers();
         let mut response = format!("HTTP/1.1 {} {}\r\n", self.status_code, self.reason_phrase);
