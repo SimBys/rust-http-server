@@ -1,5 +1,4 @@
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Request {
     pub method: String,
     pub path: String,
@@ -27,10 +26,7 @@ impl Request {
             }
 
             if let Some((key, value)) = line.split_once(":") {
-                headers.push((
-                    key.trim().to_string(),
-                    value.trim().to_string(),
-                ));
+                headers.push((key.trim().to_string(), value.trim().to_string()));
             }
         }
 

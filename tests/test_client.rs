@@ -3,11 +3,11 @@ use rustls::pki_types::CertificateDer;
 use rustls::pki_types::ServerName;
 use std::error::Error;
 use std::sync::Arc;
-use tokio_rustls::TlsConnector;
-use tokio_rustls::TlsStream;
+use tokio::net::TcpStream;
 use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::rustls::RootCertStore;
-use tokio::net::TcpStream;
+use tokio_rustls::TlsConnector;
+use tokio_rustls::TlsStream;
 
 pub struct TestClient {
     connector: TlsConnector,
@@ -33,11 +33,13 @@ impl TestClient {
 
         let connector = TlsConnector::from(Arc::new(config));
 
-        Ok(Self { connector, server_name })
+        Ok(Self {
+            connector,
+            server_name,
+        })
     }
 
     pub async fn connect(&self, stream: TcpStream) -> Result<TlsStream<TcpStream>, Box<dyn Error>> {
-
         let tls_stream = self
             .connector
             .connect(self.server_name.clone(), stream)

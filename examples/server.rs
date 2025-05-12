@@ -1,7 +1,7 @@
-use rust_http_server::{Server, Router, Request, Response};
+use rust_http_server::{Request, Response, Router, Server};
 
 fn hello_handler(_req: Request) -> Response {
-    Response::text("Hello")
+    Response::new(200).with_body("Hello!")
 }
 
 fn index_handler(_req: Request) -> Response {

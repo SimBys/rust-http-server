@@ -7,12 +7,12 @@ use std::sync::Arc;
 use tokio::fs::create_dir_all;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
-use tokio::sync::Notify;
 use tokio::signal;
+use tokio::sync::Notify;
 use tokio_rustls::rustls::ServerConfig;
 use tokio_rustls::TlsAcceptor;
 
-use crate::{Request, Router, Logger};
+use crate::{Logger, Request, Router};
 
 pub struct Server {
     address: String,
@@ -70,7 +70,9 @@ impl Server {
 
     pub async fn run(self) -> tokio::io::Result<()> {
         let listener = TcpListener::bind(&self.address).await?;
-        let logger = self.logger.unwrap();
+        if let Some(logger) = &self.logger {
+            logger.log("====================[ SERVER STARTED]====================").await;
+        }
 
         let shutdown_notify = Arc::new(Notify::new());
         let shutdown_trigger = shutdown_notify.clone();
@@ -95,18 +97,18 @@ impl Server {
             tokio::select! {
                 Ok((stream, client_addr)) = listener.accept() => {
                     let router = self.router.clone();
-                    let logger = logger.clone();
+                    let logger = self.logger.clone();
 
                     if let Some(tls_config) = self.tls_config.clone() {
                         let acceptor = TlsAcceptor::from(tls_config);
 
                         tokio::spawn(async move {
                             let tls_stream = acceptor.accept(stream).await.unwrap();
-                            handle_connection(tls_stream, router, client_addr, Some(logger)).await;
+                            handle_connection(tls_stream, router, client_addr, logger).await;
                         });
                     } else {
                         tokio::spawn(async move {
-                            handle_connection(stream, router, client_addr, Some(logger)).await;
+                            handle_connection(stream, router, client_addr, logger).await;
                         });
                     }
                 }
@@ -115,6 +117,10 @@ impl Server {
                 }
             } // tokio::select!
         } // loop
+
+        if let Some(logger) = &self.logger {
+            logger.log("====================[ SERVER STOPPED ]====================").await;
+        }
 
         println!("[S] Server has shut down gracefully.");
         Ok(())
@@ -146,9 +152,7 @@ async fn handle_connection<T: AsyncReadExt + AsyncWriteExt + Unpin>(
                 let status = response.status_code;
                 let size = response.body.len();
 
-                let log_entry = format!(
-                    "{ip} - \"{method} {path} {version}\" {status} {size}\n"
-                );
+                let log_entry = format!("{ip} - \"{method} {path} {version}\" {status} {size}\n");
 
                 logger.log(log_entry.as_str()).await;
             }

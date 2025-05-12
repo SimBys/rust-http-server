@@ -1,12 +1,13 @@
+use chrono::Local;
 use std::error::Error;
 use std::sync::Arc;
-use chrono::Local;
-use tokio::sync::Mutex;
 use tokio::fs::File;
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
+use tokio::sync::Mutex;
 
-pub struct Logger{
+#[derive(Clone)]
+pub struct Logger {
     file: Arc<Mutex<File>>,
 }
 

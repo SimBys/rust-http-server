@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::{Request, Response, Handler};
+use crate::{Handler, Request, Response};
 
 #[derive(Clone)]
 pub struct Router {
@@ -10,7 +10,9 @@ pub struct Router {
 
 impl Router {
     pub fn new() -> Self {
-        Self { routes: HashMap::new() }
+        Self {
+            routes: HashMap::new(),
+        }
     }
 
     pub fn get<F>(&mut self, path: &str, handler: F)
@@ -24,7 +26,7 @@ impl Router {
         if let Some(handler) = self.routes.get(&req.path) {
             handler.handle(req)
         } else {
-            Response::text("404 Not Found").with_status(404)
+            Response::new(404).with_body("404 NOT FOUND")
         }
     }
 }
