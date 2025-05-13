@@ -133,14 +133,12 @@ async fn handle_connection<T: AsyncReadExt + AsyncWriteExt + Unpin>(
     client_addr: SocketAddr,
     logger: Option<Logger>,
 ) {
-    let mut buffer = [0u8; 1024];
+    let mut buffer = [0u8; 1024 * 8];
     match stream.read(&mut buffer).await {
         Ok(_) => {
-            let request = Request::from_buffer(&buffer);
-            //println!("[+] {:?}", request);
+            let request = Request::from_buffer(&buffer).unwrap();
 
             let response = router.handle_request(request.clone());
-            //println!("[+] {}: {}",response.status_code, response.body);
 
             let _ = stream.write_all(response.to_bytes().as_slice()).await;
 

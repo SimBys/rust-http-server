@@ -1,22 +1,26 @@
+use crate::http_method::{HttpMethod, ParseHttpMethodError};
+use std::str::FromStr;
+
 #[derive(Debug, Clone)]
 pub struct Request {
-    pub method: String,
+    pub method: HttpMethod,
     pub path: String,
     pub version: String,
     pub headers: Vec<(String, String)>,
 }
 
 impl Request {
-    pub fn from_buffer(buffer: &[u8]) -> Self {
+    pub fn from_buffer(buffer: &[u8]) -> Result<Self, ParseHttpMethodError> {
         let request_str = String::from_utf8_lossy(buffer);
         let mut lines = request_str.lines();
 
         // Parse request line
         let request_line = lines.next().unwrap_or("");
         let mut parts = request_line.split_whitespace();
-        let method = parts.next().unwrap_or("").to_string();
+        let method_str = parts.next().unwrap_or("GET");
+        let method = HttpMethod::from_str(method_str)?;
         let path = parts.next().unwrap_or("/").to_string();
-        let version = parts.next().unwrap_or("").to_string();
+        let version = parts.next().unwrap_or("HTTP/1.1").to_string();
 
         // Parse headers
         let mut headers = Vec::new();
@@ -30,12 +34,12 @@ impl Request {
             }
         }
 
-        Self {
+        Ok(Self {
             method,
             path,
             version,
             headers,
-        }
+        })
     }
 
     pub fn to_string(&self) -> String {
@@ -51,7 +55,16 @@ impl Request {
 
     pub fn get(path: &str) -> Self {
         Self {
-            method: String::from("GET"),
+            method: HttpMethod::GET,
+            path: String::from(path),
+            version: String::from("HTTP/1.1"),
+            headers: vec![],
+        }
+    }
+
+    pub fn post(path: &str) -> Self {
+        Self {
+            method: HttpMethod::POST,
             path: String::from(path),
             version: String::from("HTTP/1.1"),
             headers: vec![],
