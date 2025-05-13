@@ -51,6 +51,10 @@ async fn main() {
         Response::new(200).with_body("Hello from GET /!")
     });
 
+    router.get("/index", |_req: Request| {
+        Response::from_file("public/index.html")
+    });
+
     // POST handler
     router.post("/data", |req: Request| {
         println!("[Handler /data] Received POST request. Path: {}", req.path);

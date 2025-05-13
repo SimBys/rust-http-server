@@ -71,7 +71,7 @@ impl Server {
     pub async fn run(self) -> tokio::io::Result<()> {
         let listener = TcpListener::bind(&self.address).await?;
         if let Some(logger) = &self.logger {
-            logger.log("====================[ SERVER STARTED]====================").await;
+            logger.log("====================[ SERVER STARTED]====================\n").await;
         }
 
         let shutdown_notify = Arc::new(Notify::new());
@@ -119,7 +119,7 @@ impl Server {
         } // loop
 
         if let Some(logger) = &self.logger {
-            logger.log("====================[ SERVER STOPPED ]====================").await;
+            logger.log("====================[ SERVER STOPPED ]====================\n").await;
         }
 
         println!("[S] Server has shut down gracefully.");
