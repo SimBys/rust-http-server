@@ -26,7 +26,7 @@ The server supports serving static files, structured routing, logging, and optio
 <hr>
 
 ## Design diagram
-TODO:
+![Design diagram](Design%20diagram.png)
 
 <hr>
 
