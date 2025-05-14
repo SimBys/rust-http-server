@@ -21,7 +21,8 @@ The server supports serving static files, structured routing, logging, and optio
 
 5. All HTTP Methods
     - The router allows for defining handlers for any method, including GET, POST, PUT, DELETE, etc.
-
+6. Modular Design
+   - The server components (request, response, router, logger, handler, middleware) are organized into modules promoting code clarity.
 <hr>
 
 ## Design diagram
@@ -32,10 +33,13 @@ TODO:
 ## Design choices
 - Library vs. Binary
     - The project is structured as a library crate with an examples/server.rs entry point. Why? This promotes modularity and allows integration into other Rust projects without needing to duplicate server logic.
+- Core HTTP/1.1 Handling
+  - Parses incoming byte streams into Request objects (method, path, version, headers) and constructs Response objects with appropriate status, headers (auto-generating essentials like Content-Length), and body.
+  - Includes a Response::from_file() utility for serving static files with automatic Content-Type detection via mime_guess.
 - Manual TLS config
     - Instead of using frameworks that handle TLS for you, we chose tokio-rustls for low-level TLS setup. Why? It provides full control over certificate loading and secure configuration, which is important for learning and customization. Also tokio and rustls collaboration made it easier to implement.
-- Routing
-    - A simple, custom-built router is used rather than a full-featured framework. Why? Keeps the project lightweight and helps demonstrate the fundamental mechanics of request dispatching.
+- Custom Routing and Middleware
+    - A simple, custom-built router and middleware dispatcher are implemented. Why? This keeps the project lightweight and helps demonstrate the fundamental mechanics of request dispatching and processing pipelines.
 - Alternatives
     - hyper: Powerful but overkill for a custom-built server.
     - warp: Built on hyper, less transparent for educational purposes.
@@ -66,6 +70,12 @@ TODO:
     - Async programming with tokio felt smooth once the basics were in place.
     - Implementing a minimal TLS server gave strong insight into how HTTPS works.
 - What Didn’t Go So Well
-    - TLS and certificates were REALLY paniful — especially dealing with SANs and browser trust
-    - Error handling with Result<T, Box\<dyn Error>> was sometimes verbose
+    - TLS and certificates were REALLY paniful — especially dealing with SANs and browser trust.
+    - Error handling with Result<T, Box\<dyn Error>> was sometimes verbose.
     - More setup time was needed than with scripting languages or full-featured frameworks.
+    - The modular design made the codebase organized.
+- Possible Improvements
+    - Implementation of HTTP/2 (or even HTTP/3) for enhanced performance.
+    - More sophisticated request body parsing (e.g., multipart/form-data, streaming).
+    - A more advanced routing system (e.g., path parameters, route groups).
+    - Websocket support for real-time communication.
